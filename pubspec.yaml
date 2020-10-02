@@ -18,7 +18,9 @@ dependencies:
       url: https://github.com/Renesanse/plugins.git
       path: packages/camera
       ref: flash_light
-  
+  fl_chart: ^0.11.1
+  smart_signal_processing: ^2.1.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

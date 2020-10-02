@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock/wakelock.dart';
 import 'chart.dart';
+import 'models/models.dart';
 
 class HomePage extends StatefulWidget {
   @override

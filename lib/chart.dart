@@ -1,6 +1,8 @@
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter/material.dart';
 
+import 'models/models.dart';
+
 class Chart extends StatelessWidget {
   final List<SensorValue> _data;
 
@@ -28,9 +30,9 @@ class Chart extends StatelessWidget {
   }
 }
 
-class SensorValue {
-  final DateTime time;
-  final double value;
+// class SensorValue {
+//   final DateTime time;
+//   final double value;
 
-  SensorValue(this.time, this.value);
-}
+//   SensorValue(this.time, this.value);
+// }
