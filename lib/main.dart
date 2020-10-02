@@ -11,9 +11,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'MediRate',
       theme: ThemeData(),
-      home: MultiProvider(providers: [
-        Provider(create: (_) => GameViewState()),
-      ], child: GameView()),
-    );
+      home: 
+       GameView();
   }
 }
