@@ -42,7 +42,10 @@ class _GameViewState extends State<GameView> {
             child: _greenValues.length < 2
                 ? Container()
                 : DataChart(_greenValues, _redValues),
-          )
+          ),
+          // Container(
+          //   child: smoothed != null ? SmoothChart(smoothed) : Container(),
+          // )
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -79,7 +82,7 @@ class _GameViewState extends State<GameView> {
         if (_lastCameraImage != null) {
           _scanImage(_lastCameraImage);
           smoothing(_greenValues);
-          print(_greenValues.last.value);
+          // print(_greenValues.last.value);
         }
       } else {
         _timer.cancel();
@@ -96,7 +99,7 @@ class _GameViewState extends State<GameView> {
       });
       print(gameOn);
       _initTimer();
-      print(_greenValues.last.value);
+      print(_greenValues.length > 1 ? _greenValues.last.value : 0);
     });
   }
 
@@ -132,20 +135,19 @@ class _GameViewState extends State<GameView> {
 double _planeAverage(CameraImage image, String color) {
   double ret;
   int colorInt = color == 'red' ? 0 : 1;
-  int tally = 0;
   var data = image.planes[colorInt].bytes;
   int imageTally = data.reduce((value, element) => value + element);
   ret = imageTally / data.length;
   return ret;
 }
 
-int _incrementWithPixel(int value, int element, int tally) {
-  int ret;
-  if (element != 255) {
-    tally++;
-    ret = value + element;
-  } else {
-    ret = value;
-  }
-  return ret;
-}
+// int _incrementWithPixel(int value, int element, int tally) {
+//   int ret;
+//   if (element != 255) {
+//     tally++;
+//     ret = value + element;
+//   } else {
+//     ret = value;
+//   }
+//   return ret;
+// }

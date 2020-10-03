@@ -11,10 +11,12 @@ smoothing(List<SensorValue> array) {
   final timeWidth =
       Duration(microseconds: timeDelta.inMicroseconds ~/ arrayLength);
 
+  // Float64List time = Float64List(arrayLength);
   Float64List real = Float64List(arrayLength);
   Float64List imaginary = Float64List(arrayLength);
 
   for (int i = 1; i <= arrayLength; i++) {
+    // time[i - 1] = i * timeWidth.inSeconds.toDouble();
     if (i == 1) {
       real[arrayLength - i] = array.last.value;
     } else {
@@ -32,7 +34,7 @@ smoothing(List<SensorValue> array) {
             .time
             .difference(array[currentPoint - 1].time)
             .inMicroseconds;
-        real[currentPoint] =
+        real[real.length - i - 1] =
             array[currentPoint].value - rise * (tToPt1 / ptDelta);
       } else if (array[currentPoint]
           .time
@@ -47,21 +49,27 @@ smoothing(List<SensorValue> array) {
             .time
             .difference(array[currentPoint].time)
             .inMicroseconds;
-        real[currentPoint] =
+        real[real.length - i] =
             array[currentPoint].value - rise * (tToPt1 / ptDelta);
       } else {
-        real[currentPoint] = array[currentPoint].value;
+        real[real.length - i] = array[currentPoint].value;
       }
     }
   }
+  // return [time, real, imaginary];
 
   FFT.transform(real, imaginary);
+
+  print(real);
+
+  print(imaginary);
 }
 
 int getArrayRoot2Length(List array) {
   int i = 1;
-  while (array.length / i > 1) {
+  if (array.length == 1) return 1;
+  while (array.length / i >= 1) {
     i *= 2;
   }
-  return i;
+  return i ~/ 2;
 }

@@ -14,14 +14,14 @@ class DataChart extends StatelessWidget {
     List<FlSpot> green = [];
     List<FlSpot> red = [];
 
-    for (int i = max(0, greenData.length - 200); i < greenData.length; i++) {
-      SensorValue element = greenData[i];
-      green.add(FlSpot(
-          (element.time.millisecondsSinceEpoch -
-                  greenData.first.time.millisecondsSinceEpoch) /
-              1000,
-          element.value));
-    }
+    // for (int i = max(0, greenData.length - 200); i < greenData.length; i++) {
+    //   SensorValue element = greenData[i];
+    //   green.add(FlSpot(
+    //       (element.time.millisecondsSinceEpoch -
+    //               greenData.first.time.millisecondsSinceEpoch) /
+    //           1000,
+    //       element.value));
+    // }
     redData.forEach((element) {});
     for (int i = max(0, redData.length - 200); i < redData.length; i++) {
       SensorValue element = redData[i];
@@ -32,17 +32,18 @@ class DataChart extends StatelessWidget {
           element.value));
     }
 
-    return LineChart(LineChartData(
-        titlesData: FlTitlesData(
-          leftTitles: SideTitles(showTitles: true),
-          rightTitles: SideTitles(showTitles: true),
-        ),
-        lineBarsData: [
-          LineChartBarData(
-              spots: green,
-              colors: [Colors.green],
-              dotData: FlDotData(show: false)),
-          LineChartBarData(spots: red, dotData: FlDotData(show: false))
-        ]));
+    return Transform.rotate(
+      angle: pi / 2,
+      child: Container(
+        height: 50,
+        child: LineChart(LineChartData(
+            titlesData: FlTitlesData(
+                leftTitles: SideTitles(showTitles: false),
+                bottomTitles: SideTitles(showTitles: false)),
+            lineBarsData: [
+              LineChartBarData(spots: red, dotData: FlDotData(show: false))
+            ])),
+      ),
+    );
   }
 }
