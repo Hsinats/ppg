@@ -62,7 +62,7 @@ smoothing(List<SensorValue> array) {
 
   print(real);
 
-  print(imaginary);
+  // print(imaginary);
 }
 
 int getArrayRoot2Length(List array) {
