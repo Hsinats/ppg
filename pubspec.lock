@@ -123,12 +123,10 @@ packages:
   camera:
     dependency: "direct main"
     description:
-      path: "packages/camera"
-      ref: flash_light
-      resolved-ref: e15088f694543085d14e96be5ccf784ff189c88e
-      url: "https://github.com/Renesanse/plugins.git"
-    source: git
-    version: "0.5.7+3"
+      name: camera
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.5.8+7"
   characters:
     dependency: transitive
     description:

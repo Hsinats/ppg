@@ -23,7 +23,7 @@ class DataChart extends StatelessWidget {
     //       element.value));
     // }
     redData.forEach((element) {});
-    for (int i = max(0, redData.length - 200); i < redData.length; i++) {
+    for (int i = max(0, redData.length - 100); i < redData.length; i++) {
       SensorValue element = redData[i];
       red.add(FlSpot(
           (element.time.millisecondsSinceEpoch -
@@ -32,18 +32,15 @@ class DataChart extends StatelessWidget {
           element.value));
     }
 
-    return Transform.rotate(
-      angle: pi / 2,
-      child: Container(
-        height: 50,
-        child: LineChart(LineChartData(
-            titlesData: FlTitlesData(
-                leftTitles: SideTitles(showTitles: false),
-                bottomTitles: SideTitles(showTitles: false)),
-            lineBarsData: [
-              LineChartBarData(spots: red, dotData: FlDotData(show: false))
-            ])),
-      ),
+    return Container(
+      height: 50,
+      child: LineChart(LineChartData(
+          titlesData: FlTitlesData(
+              leftTitles: SideTitles(showTitles: false),
+              bottomTitles: SideTitles(showTitles: false)),
+          lineBarsData: [
+            LineChartBarData(spots: red, dotData: FlDotData(show: false))
+          ])),
     );
   }
 }

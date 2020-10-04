@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:PPG/functions/smoothing.dart';
 import 'package:PPG/widgets/data_chart.dart';
+import 'package:PPG/widgets/widgets.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock/wakelock.dart';
@@ -15,10 +17,11 @@ class GameView extends StatefulWidget {
 
 class _GameViewState extends State<GameView> {
   CameraController _cameraController;
-  int _fps = 50;
+  int _fps = 30;
   CameraImage _lastCameraImage;
   List<SensorValue> _greenValues = [];
   List<SensorValue> _redValues = [];
+  List<Float64List> smoothedData = [];
 
   bool gameOn = false;
   Timer _timer;
@@ -43,9 +46,11 @@ class _GameViewState extends State<GameView> {
                 ? Container()
                 : DataChart(_greenValues, _redValues),
           ),
-          // Container(
-          //   child: smoothed != null ? SmoothChart(smoothed) : Container(),
-          // )
+          Container(
+            child: smoothedData.isNotEmpty
+                ? SmoothChart(smoothedData)
+                : Container(),
+          )
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -61,6 +66,7 @@ class _GameViewState extends State<GameView> {
   Future<void> initCameraControler() async {
     try {
       List _cameras = await availableCameras();
+      print(_cameras);
       _cameraController =
           CameraController(_cameras.first, ResolutionPreset.low);
       await _cameraController.initialize();
@@ -78,11 +84,10 @@ class _GameViewState extends State<GameView> {
   _initTimer() {
     _timer = Timer.periodic(Duration(milliseconds: 1000 ~/ _fps), (timer) {
       if (gameOn) {
-        // print(_lastCameraImage);
         if (_lastCameraImage != null) {
-          _scanImage(_lastCameraImage);
-          smoothing(_greenValues);
-          // print(_greenValues.last.value);
+          // _scanImage(_lastCameraImage);
+          // smoothedData = smoothing(_redValues);
+          // print(smoothedData.isNotEmpty ? smoothedData[1].length : 'empty');
         }
       } else {
         _timer.cancel();
@@ -93,19 +98,18 @@ class _GameViewState extends State<GameView> {
   _play() {
     _clearCameraFrames();
     initCameraControler().then((value) {
-      Wakelock.enable();
       setState(() {
         gameOn = true;
       });
-      print(gameOn);
+      Wakelock.enable();
       _initTimer();
-      print(_greenValues.length > 1 ? _greenValues.last.value : 0);
     });
   }
 
   _stopGame() {
     _disposeController();
-    Wakelock.disable();
+    // Wakelock.disable();
+    print('stopping');
     setState(() {
       gameOn = false;
     });
