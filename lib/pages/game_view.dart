@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'package:PPG/functions/smoothing.dart';
 import 'package:PPG/widgets/data_chart.dart';
 import 'package:PPG/widgets/widgets.dart';
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_better_camera/camera.dart';
 import 'package:wakelock/wakelock.dart';
 
 import 'package:PPG/models/models.dart';
@@ -19,7 +19,6 @@ class _GameViewState extends State<GameView> {
   CameraController _cameraController;
   int _fps = 30;
   CameraImage _lastCameraImage;
-  List<SensorValue> _greenValues = [];
   List<SensorValue> _redValues = [];
   List<Float64List> smoothedData = [];
 
@@ -42,9 +41,7 @@ class _GameViewState extends State<GameView> {
         children: [
           SizedBox(height: 50),
           Container(
-            child: _greenValues.length < 2
-                ? Container()
-                : DataChart(_greenValues, _redValues),
+            child: _redValues.length < 2 ? Container() : DataChart(_redValues),
           ),
           Container(
             child: smoothedData.isNotEmpty
@@ -66,15 +63,16 @@ class _GameViewState extends State<GameView> {
   Future<void> initCameraControler() async {
     try {
       List _cameras = await availableCameras();
-      print(_cameras);
       _cameraController =
           CameraController(_cameras.first, ResolutionPreset.low);
       await _cameraController.initialize();
-      Future.delayed(Duration(milliseconds: 100)).then((value) {
-        _cameraController.flash(true);
+      Future.delayed(Duration(seconds: 1)).then((value) {
+        _cameraController.setFlashMode(FlashMode.torch);
       });
-      _cameraController.startImageStream((CameraImage image) {
+      _cameraController.startImageStream((image) {
+        // _lastCameraImage = null;
         _lastCameraImage = image;
+        // print(ismage);
       });
     } catch (e) {
       print(e.toString());
@@ -85,9 +83,9 @@ class _GameViewState extends State<GameView> {
     _timer = Timer.periodic(Duration(milliseconds: 1000 ~/ _fps), (timer) {
       if (gameOn) {
         if (_lastCameraImage != null) {
-          // _scanImage(_lastCameraImage);
-          // smoothedData = smoothing(_redValues);
-          // print(smoothedData.isNotEmpty ? smoothedData[1].length : 'empty');
+          _scanImage(_lastCameraImage);
+          // print(smoothing(_redValues));
+          // print(smoothedData.isNotEmpty ? smoothedData[1].length : '');
         }
       } else {
         _timer.cancel();
@@ -108,7 +106,7 @@ class _GameViewState extends State<GameView> {
 
   _stopGame() {
     _disposeController();
-    // Wakelock.disable();
+    Wakelock.disable();
     print('stopping');
     setState(() {
       gameOn = false;
@@ -117,16 +115,14 @@ class _GameViewState extends State<GameView> {
 
   _scanImage(CameraImage image) {
     DateTime currentTime = DateTime.now();
-    double greenAvg = _planeAverage(image, 'green');
     double redAvg = _planeAverage(image, 'red');
 
-    _greenValues.add(SensorValue(currentTime, greenAvg));
     _redValues.add(SensorValue(currentTime, redAvg));
+    smoothing(_redValues);
     setState(() {});
   }
 
   _clearCameraFrames() {
-    _greenValues.clear();
     _redValues.clear();
   }
 
@@ -145,13 +141,3 @@ double _planeAverage(CameraImage image, String color) {
   return ret;
 }
 
-// int _incrementWithPixel(int value, int element, int tally) {
-//   int ret;
-//   if (element != 255) {
-//     tally++;
-//     ret = value + element;
-//   } else {
-//     ret = value;
-//   }
-//   return ret;
-// }

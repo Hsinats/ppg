@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_better_camera/camera.dart';
 import 'package:wakelock/wakelock.dart';
 import 'chart.dart';
 import 'models/models.dart';
@@ -212,7 +212,7 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
       _controller = CameraController(_cameras.first, ResolutionPreset.low);
       await _controller.initialize();
       Future.delayed(Duration(milliseconds: 100)).then((onValue) {
-        _controller.flash(true);
+        _controller.setFlashMode(FlashMode.alwaysFlash);
       });
       _controller.startImageStream((CameraImage image) {
         _image = image;

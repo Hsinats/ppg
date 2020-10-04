@@ -6,11 +6,9 @@ import 'package:smart_signal_processing/smart_signal_processing.dart';
 smoothing(List<SensorValue> array) {
   List<Float64List> data = [];
 
-  print('data smoothed');
+  data = arrayCreation(array);
 
-  // data = arrayCreation(array);
-
-  return data;
+  return 'smoothed';
 }
 
 arrayCreation(List<SensorValue> array) {

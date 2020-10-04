@@ -120,13 +120,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "7.1.0"
-  camera:
-    dependency: "direct main"
-    description:
-      name: camera
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.5.8+7"
   characters:
     dependency: transitive
     description:
@@ -258,6 +251,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_better_camera:
+    dependency: "direct main"
+    description:
+      name: flutter_better_camera
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.6.1"
   flutter_launcher_icons:
     dependency: "direct dev"
     description:
