@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:PPG/functions/smoothing.dart';
 import 'package:PPG/widgets/data_chart.dart';
 import 'package:PPG/widgets/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_better_camera/camera.dart';
 import 'package:wakelock/wakelock.dart';
@@ -140,4 +141,3 @@ double _planeAverage(CameraImage image, String color) {
   ret = imageTally / data.length;
   return ret;
 }
-
