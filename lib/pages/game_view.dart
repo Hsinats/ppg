@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:PPG/functions/smoothing.dart';
-import 'package:PPG/widgets/data_chart.dart';
 import 'package:PPG/widgets/widgets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,10 +20,14 @@ class _GameViewState extends State<GameView> {
   int _fps = 30;
   CameraImage _lastCameraImage;
   List<SensorValue> _redValues = [];
-  List<Float64List> smoothedData = [];
+  int frameTally = 0;
+
+  List<Float64List> data = [];
 
   bool gameOn = false;
   Timer _timer;
+  DateTime lastHRV;
+  int hrv;
 
   @override
   void dispose() {
@@ -37,17 +40,18 @@ class _GameViewState extends State<GameView> {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
     return Scaffold(
       body: Column(
         children: [
           SizedBox(height: 50),
           Container(
-            child: _redValues.length < 2 ? Container() : DataChart(_redValues),
+            child: _redValues.length < 2
+                ? Container()
+                : DataChart(_redValues, width),
           ),
           Container(
-            child: smoothedData.isNotEmpty
-                ? SmoothChart(smoothedData)
-                : Container(),
+            child: data.isNotEmpty ? SmoothChart(data, width) : Container(),
           )
         ],
       ),
@@ -55,10 +59,6 @@ class _GameViewState extends State<GameView> {
           child: Icon(gameOn ? Icons.pause : Icons.play_arrow),
           onPressed: gameOn ? _stopGame : _play),
     );
-  }
-
-  testing() {
-    print('calling to close');
   }
 
   Future<void> initCameraControler() async {
@@ -71,9 +71,7 @@ class _GameViewState extends State<GameView> {
         _cameraController.setFlashMode(FlashMode.torch);
       });
       _cameraController.startImageStream((image) {
-        // _lastCameraImage = null;
         _lastCameraImage = image;
-        // print(ismage);
       });
     } catch (e) {
       print(e.toString());
@@ -85,8 +83,13 @@ class _GameViewState extends State<GameView> {
       if (gameOn) {
         if (_lastCameraImage != null) {
           _scanImage(_lastCameraImage);
-          // print(smoothing(_redValues));
-          // print(smoothedData.isNotEmpty ? smoothedData[1].length : '');
+          frameTally++;
+          if (frameTally >= 200) {
+            data = smoothing(_redValues);
+            print(data[0].length);
+            frameTally = 0;
+            setState(() {});
+          }
         }
       } else {
         _timer.cancel();
@@ -101,14 +104,15 @@ class _GameViewState extends State<GameView> {
         gameOn = true;
       });
       Wakelock.enable();
+      lastHRV = DateTime.now();
       _initTimer();
     });
   }
 
   _stopGame() {
     _disposeController();
+    lastHRV = null;
     Wakelock.disable();
-    print('stopping');
     setState(() {
       gameOn = false;
     });
@@ -119,7 +123,7 @@ class _GameViewState extends State<GameView> {
     double redAvg = _planeAverage(image, 'red');
 
     _redValues.add(SensorValue(currentTime, redAvg));
-    smoothing(_redValues);
+
     setState(() {});
   }
 

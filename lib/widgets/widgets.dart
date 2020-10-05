@@ -1,2 +1,2 @@
 export 'data_chart.dart';
-export 'smooth.dart';
+export 'smooth_chart.dart';

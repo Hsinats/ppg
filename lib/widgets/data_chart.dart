@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class DataChart extends StatelessWidget {
-  DataChart(this.redData);
+  DataChart(this.redData, this.width);
   final List<SensorValue> redData;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +24,8 @@ class DataChart extends StatelessWidget {
     }
 
     return Container(
-      height: 50,
+      height: 20,
+      width: width,
       child: LineChart(LineChartData(
           titlesData: FlTitlesData(
               leftTitles: SideTitles(showTitles: false),
