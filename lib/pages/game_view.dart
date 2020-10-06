@@ -3,11 +3,8 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:PPG/functions/smoothing.dart';
-import 'package:PPG/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_better_camera/camera.dart';
 import 'package:wakelock/wakelock.dart';
 
@@ -46,24 +43,6 @@ class _GameViewState extends State<GameView> {
     double width = MediaQuery.of(context).size.width;
     return Scaffold(
       body: _ScaffoldBodyLandscape(_redValues),
-      // body: OrientationBuilder(builder: (context, orientation) {
-      //   return orientation == Orientation.portrait
-      //       ? _ScaffoldBodyPortrait()
-      //       : _ScaffoldBodyLandscape(_redValues);
-      // }),
-      // body: Column(
-      //   children: [
-      //     SizedBox(height: 50),
-      //     Container(
-      //       child: _redValues.length < 2
-      //           ? Container()
-      //           : DataChart(_redValues, width),
-      //     ),
-      //     Container(
-      //       child: data.isNotEmpty ? SmoothChart(data, width) : Container(),
-      //     )
-      //   ],
-      // ),
       floatingActionButton: FloatingActionButton(
           child: Icon(gameOn ? Icons.pause : Icons.play_arrow),
           onPressed: gameOn ? _stopGame : _play),
@@ -154,21 +133,6 @@ double _planeAverage(CameraImage image, String color) {
   return ret;
 }
 
-class _ScaffoldBodyPortrait extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
-    final width = MediaQuery.of(context).size.width;
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(color: Colors.blue),
-        )
-      ],
-    );
-  }
-}
-
 class _ScaffoldBodyLandscape extends StatelessWidget {
   final List<SensorValue> data;
 
@@ -181,8 +145,8 @@ class _ScaffoldBodyLandscape extends StatelessWidget {
     return Stack(
       children: [
         Sky(),
+        data.isNotEmpty ? Waves(width, height, data) : Container(),
         Water(height, width),
-        Waves(width, height, data),
       ],
     );
   }
@@ -218,27 +182,42 @@ class Waves extends StatelessWidget {
   final width;
   final height;
   final List<SensorValue> data;
+  final double waveHeight = 20;
+
+  swimmerYposition(List<SensorValue> data, _DrawParams params) {
+    if (params.maxMinDiff == 0) return 0.0;
+    double ret = (params.max - data[max(0, data.length - 101)].value) /
+        params.maxMinDiff;
+    return ret;
+  }
 
   Waves(this.width, this.height, this.data);
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      bottom: height / 3,
-      height: 100,
-      width: width,
-      child: CustomPaint(
-        size: Size.infinite,
-        painter: WavesPainter(data, width),
+    _DrawParams _drawParams = _DrawParams.findMaxMinDiff(data);
+    double swimmerY = swimmerYposition(data, _drawParams) * waveHeight;
+    return Stack(children: [
+      Positioned(
+          bottom: height / 3 + waveHeight - swimmerY - 5, child: Swimmer()),
+      Positioned(
+        bottom: height / 3,
+        height: waveHeight,
+        width: width,
+        child: CustomPaint(
+          size: Size.infinite,
+          painter: WavesPainter(data, width, _drawParams),
+        ),
       ),
-    );
+    ]);
   }
 }
 
 class WavesPainter extends CustomPainter {
   double width;
   List<SensorValue> data;
+  _DrawParams _drawParams;
 
-  WavesPainter(this.data, this.width);
+  WavesPainter(this.data, this.width, this._drawParams);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -248,7 +227,7 @@ class WavesPainter extends CustomPainter {
     }
 
     //generate trapezoids
-    List<Trapezoid> trapezoids = _generateTrapezoid(width, data);
+    List<Trapezoid> trapezoids = _generateTrapezoid(width, data, _drawParams);
 
     // paint waves
 
@@ -267,9 +246,9 @@ class WavesPainter extends CustomPainter {
         first = false;
       }
       path.lineTo(
-          width / trapezoids.length * i, trapezoids[i].y2 * size.height);
+          width / (trapezoids.length - 1) * i, trapezoids[i].y2 * size.height);
       if (i == trapezoids.length - 1) {
-        path.lineTo(width / trapezoids.length * i, size.height);
+        path.lineTo(width / (trapezoids.length - 1) * i, size.height);
         path.lineTo(0, size.height);
       }
     }
@@ -283,29 +262,14 @@ class WavesPainter extends CustomPainter {
   }
 }
 
-List<Trapezoid> _generateTrapezoid(double width, List<SensorValue> data) {
-  double min;
-  double max;
+List<Trapezoid> _generateTrapezoid(
+    double width, List<SensorValue> data, _DrawParams _drawParams) {
   List<Trapezoid> ret = [];
-
-  for (int i = 0; i < data.length; i++) {
-    if (data.length - i > 101) continue;
-    if (min == null) {
-      min = data[i].value;
-      max = data[i].value;
-    } else if (data[i].value > max) {
-      max = data[i].value;
-    } else if (data[i].value < min) {
-      min = data[i].value;
-    }
-  }
-
-  double maxMinDiff = max - min;
 
   for (int i = 0; i < data.length - 1; i++) {
     if (data.length - i > 101) continue;
-    double y1 = (max - data[i].value) / maxMinDiff;
-    double y2 = (max - data[i + 1].value) / maxMinDiff;
+    double y1 = (_drawParams.max - data[i].value) / _drawParams.maxMinDiff;
+    double y2 = (_drawParams.max - data[i + 1].value) / _drawParams.maxMinDiff;
     ret.add(Trapezoid(y1: y1, y2: y2));
   }
   return ret;
@@ -337,6 +301,7 @@ class Water extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.blue,
           ),
+          child: InfoBuoys(),
         ));
   }
 }
@@ -344,12 +309,128 @@ class Water extends StatelessWidget {
 class Swimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-        left: 0.5,
-        top: 170,
-        child: Image.asset(
-          'assets/sprite_in_motion.png',
-          scale: .5,
-        ));
+    return Image.asset(
+      'assets/sprite_in_motion.png',
+      scale: .5,
+    );
+  }
+}
+
+class _DrawParams {
+  List<SensorValue> data;
+  double max;
+  double min;
+  double maxMinDiff;
+
+  _DrawParams.findMaxMinDiff(this.data) {
+    for (int i = 0; i < data.length; i++) {
+      if (data.length - i > 101) continue;
+      if (min == null) {
+        min = data[i].value;
+        max = data[i].value;
+      } else if (data[i].value > max) {
+        max = data[i].value;
+      } else if (data[i].value < min) {
+        min = data[i].value;
+      }
+    }
+
+    maxMinDiff = max - min;
+  }
+}
+
+class Buoy extends StatelessWidget {
+  Buoy(this.metric, this.value);
+
+  final String metric;
+  final double value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(children: [
+      Container(
+        height: 50,
+        width: 150,
+        decoration: BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.circular(40)),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              metric,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(value.toStringAsFixed(0)),
+          ],
+        ),
+      ),
+      Positioned(
+        left: 25,
+        child: Container(
+          height: 70,
+          width: 20,
+          decoration: BoxDecoration(color: Colors.red),
+        ),
+      ),
+      Positioned(
+        right: 25,
+        child: Container(
+          height: 70,
+          width: 20,
+          decoration: BoxDecoration(color: Colors.red),
+        ),
+      ),
+    ]);
+  }
+}
+
+class InfoBuoys extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, BoxConstraints constraints) {
+        if (constraints.maxWidth <= 320) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Buoy('HR', 69),
+              Buoy('HR', 69),
+              Buoy('HR', 69),
+              Buoy('HR', 69)
+            ],
+          );
+        } else if (constraints.maxWidth <= 640) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Buoy('HR', 69),
+                  Buoy('HR', 69),
+                ],
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Buoy('HR', 69),
+                  Buoy('HR', 69),
+                ],
+              ),
+            ],
+          );
+        } else {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Buoy('HR', 69),
+              Buoy('HR', 69),
+              Buoy('HR', 69),
+              Buoy('HR', 69)
+            ],
+          );
+        }
+      },
+    );
   }
 }
