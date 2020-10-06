@@ -38,3 +38,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/sprites.png
+    - assets/sprite_in_motion.png

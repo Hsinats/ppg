@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -6,6 +7,7 @@ import 'package:PPG/functions/smoothing.dart';
 import 'package:PPG/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_better_camera/camera.dart';
 import 'package:wakelock/wakelock.dart';
 
@@ -43,11 +45,12 @@ class _GameViewState extends State<GameView> {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     return Scaffold(
-      body: OrientationBuilder(builder: (context, orientation) {
-        return orientation == Orientation.portrait
-            ? _ScaffoldBodyPortrait()
-            : _ScaffoldBodyLandscape();
-      }),
+      body: _ScaffoldBodyLandscape(_redValues),
+      // body: OrientationBuilder(builder: (context, orientation) {
+      //   return orientation == Orientation.portrait
+      //       ? _ScaffoldBodyPortrait()
+      //       : _ScaffoldBodyLandscape(_redValues);
+      // }),
       // body: Column(
       //   children: [
       //     SizedBox(height: 50),
@@ -91,8 +94,8 @@ class _GameViewState extends State<GameView> {
           _scanImage(_lastCameraImage);
           frameTally++;
           if (frameTally >= 200) {
-            data = smoothing(_redValues);
-            print(data[0].length);
+            // data = smoothing(_redValues);
+            // print(data[0].length);
             frameTally = 0;
             setState(() {});
           }
@@ -129,7 +132,6 @@ class _GameViewState extends State<GameView> {
     double redAvg = _planeAverage(image, 'red');
 
     _redValues.add(SensorValue(currentTime, redAvg));
-
     setState(() {});
   }
 
@@ -168,32 +170,66 @@ class _ScaffoldBodyPortrait extends StatelessWidget {
 }
 
 class _ScaffoldBodyLandscape extends StatelessWidget {
+  final List<SensorValue> data;
+
+  _ScaffoldBodyLandscape(this.data);
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
     return Stack(
       children: [
-        Container(
-          decoration: BoxDecoration(color: Colors.pink[200]),
-        ),
-        Swimmer(),
+        Sky(),
         Water(height, width),
-        Waves(width),
+        Waves(width, height, data),
       ],
     );
   }
 }
 
-class Waves extends StatelessWidget {
-  final width;
+class Sky extends StatelessWidget {
+  const Sky({
+    Key key,
+  }) : super(key: key);
 
-  Waves(this.width);
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size.infinite,
-      painter: WavesPainter(width),
+    return Stack(children: [
+      Container(
+        decoration: BoxDecoration(color: Colors.pink[200]),
+      ),
+      Positioned(
+          top: 30,
+          right: 20,
+          child: Container(
+            height: 80,
+            width: 80,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(40),
+              color: Colors.yellow[200],
+            ),
+          ))
+    ]);
+  }
+}
+
+class Waves extends StatelessWidget {
+  final width;
+  final height;
+  final List<SensorValue> data;
+
+  Waves(this.width, this.height, this.data);
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: height / 3,
+      height: 100,
+      width: width,
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: WavesPainter(data, width),
+      ),
     );
   }
 }
@@ -202,11 +238,12 @@ class WavesPainter extends CustomPainter {
   double width;
   List<SensorValue> data;
 
-  WavesPainter(this.data);
+  WavesPainter(this.data, this.width);
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (data.length < 101) {
+    if (data.isEmpty) {
+      print('not enough data');
       return;
     }
 
@@ -214,9 +251,30 @@ class WavesPainter extends CustomPainter {
     List<Trapezoid> trapezoids = _generateTrapezoid(width, data);
 
     // paint waves
-    for (Trapezoid trapezoid in trapezoids) {
-      canvas.drawLine(Offset(0, trapezoid.y1), Offset(1, trapezoid.y1), paint);
+
+    var wavePaint = Paint()
+      ..color = Colors.blue
+      ..style = PaintingStyle.fill
+      ..strokeWidth = 2;
+
+    var path = Path();
+
+    bool first = true;
+    for (int i = max(trapezoids.length - 101, 0); i < trapezoids.length; i++) {
+      if (first) {
+        path.moveTo(0, 0);
+        path.lineTo(0, trapezoids[i].y1 * size.height);
+        first = false;
+      }
+      path.lineTo(
+          width / trapezoids.length * i, trapezoids[i].y2 * size.height);
+      if (i == trapezoids.length - 1) {
+        path.lineTo(width / trapezoids.length * i, size.height);
+        path.lineTo(0, size.height);
+      }
     }
+
+    canvas.drawPath(path, wavePaint);
   }
 
   @override
@@ -230,20 +288,22 @@ List<Trapezoid> _generateTrapezoid(double width, List<SensorValue> data) {
   double max;
   List<Trapezoid> ret = [];
 
-  data.forEach((element) {
+  for (int i = 0; i < data.length; i++) {
+    if (data.length - i > 101) continue;
     if (min == null) {
-      min = element.value;
-      max = element.value;
-    } else if (element.value > max) {
-      max = element.value;
-    } else if (element.value < min) {
-      min = element.value;
+      min = data[i].value;
+      max = data[i].value;
+    } else if (data[i].value > max) {
+      max = data[i].value;
+    } else if (data[i].value < min) {
+      min = data[i].value;
     }
-  });
+  }
 
   double maxMinDiff = max - min;
 
   for (int i = 0; i < data.length - 1; i++) {
+    if (data.length - i > 101) continue;
     double y1 = (max - data[i].value) / maxMinDiff;
     double y2 = (max - data[i + 1].value) / maxMinDiff;
     ret.add(Trapezoid(y1: y1, y2: y2));
@@ -271,11 +331,11 @@ class Water extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned(
         bottom: 0,
-        height: height / 2,
+        height: height / 3,
         width: width,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.5),
+            color: Colors.blue,
           ),
         ));
   }
@@ -286,7 +346,10 @@ class Swimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned(
         left: 0.5,
-        top: 0.5,
-        child: Image(image: AssetImage('assets/sprites.png')));
+        top: 170,
+        child: Image.asset(
+          'assets/sprite_in_motion.png',
+          scale: .5,
+        ));
   }
 }
