@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:PPG/functions/functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_better_camera/camera.dart';
@@ -27,7 +28,7 @@ class _GameViewState extends State<GameView> {
   bool gameOn = false;
   Timer _timer;
   DateTime lastHRV;
-  int hrv;
+  GameInfo gameInfo = GameInfo();
 
   @override
   void dispose() {
@@ -40,9 +41,8 @@ class _GameViewState extends State<GameView> {
 
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
     return Scaffold(
-      body: _ScaffoldBodyLandscape(_redValues),
+      body: _ScaffoldBodyLandscape(_redValues, gameInfo),
       floatingActionButton: FloatingActionButton(
           child: Icon(gameOn ? Icons.pause : Icons.play_arrow),
           onPressed: gameOn ? _stopGame : _play),
@@ -72,10 +72,11 @@ class _GameViewState extends State<GameView> {
         if (_lastCameraImage != null) {
           _scanImage(_lastCameraImage);
           frameTally++;
-          if (frameTally >= 200) {
-            // data = smoothing(_redValues);
-            // print(data[0].length);
+          if (frameTally >= _fps) {
             frameTally = 0;
+            // heartRate(_redValues);
+            List<int> hrReturn = heartRate(_redValues);
+            gameInfo.update(newHeartRate: hrReturn[0], newHRV: hrReturn[1]);
             setState(() {});
           }
         }
@@ -135,8 +136,9 @@ double _planeAverage(CameraImage image, String color) {
 
 class _ScaffoldBodyLandscape extends StatelessWidget {
   final List<SensorValue> data;
+  final GameInfo gameInfo;
 
-  _ScaffoldBodyLandscape(this.data);
+  _ScaffoldBodyLandscape(this.data, this.gameInfo);
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +148,7 @@ class _ScaffoldBodyLandscape extends StatelessWidget {
       children: [
         Sky(),
         data.isNotEmpty ? Waves(width, height, data) : Container(),
-        Water(height, width),
+        Water(height, width, gameInfo),
       ],
     );
   }
@@ -288,8 +290,9 @@ class Trapezoid {
 class Water extends StatelessWidget {
   final double height;
   final double width;
+  final GameInfo gameInfo;
 
-  Water(this.height, this.width);
+  Water(this.height, this.width, this.gameInfo);
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +304,10 @@ class Water extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.blue,
           ),
-          child: InfoBuoys(),
+          child: InfoBuoys(
+            heartRate: gameInfo.heartRate,
+            hRV: gameInfo.hRV,
+          ),
         ));
   }
 }
@@ -343,10 +349,17 @@ class Buoy extends StatelessWidget {
   Buoy(this.metric, this.value);
 
   final String metric;
-  final double value;
+  final num value;
 
   @override
   Widget build(BuildContext context) {
+    bool isTime = false;
+    Text timeText;
+    if (metric == 'Time') {
+      isTime = true;
+      timeText = Text('${(value ?? 0) ~/ 60}:${(value ?? 0) % 60}');
+    }
+
     return Stack(children: [
       Container(
         height: 50,
@@ -360,7 +373,7 @@ class Buoy extends StatelessWidget {
               metric,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            Text(value.toStringAsFixed(0)),
+            isTime ? timeText : Text((value ?? 0).toStringAsFixed(0)),
           ],
         ),
       ),
@@ -385,6 +398,13 @@ class Buoy extends StatelessWidget {
 }
 
 class InfoBuoys extends StatelessWidget {
+  InfoBuoys({this.heartRate, this.hRV, this.time, this.score});
+
+  final int heartRate;
+  final int hRV;
+  final int time;
+  final int score;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -393,10 +413,10 @@ class InfoBuoys extends StatelessWidget {
           return Column(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Buoy('HR', 69),
-              Buoy('HR', 69),
-              Buoy('HR', 69),
-              Buoy('HR', 69)
+              Buoy('HR', heartRate),
+              Buoy('HRV', hRV),
+              Buoy('Time', time),
+              Buoy('Score', score)
             ],
           );
         } else if (constraints.maxWidth <= 640) {
@@ -406,15 +426,15 @@ class InfoBuoys extends StatelessWidget {
               Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Buoy('HR', 69),
-                  Buoy('HR', 69),
+                  Buoy('HR', heartRate),
+                  Buoy('HRV', hRV),
                 ],
               ),
               Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Buoy('HR', 69),
-                  Buoy('HR', 69),
+                  Buoy('Time', time),
+                  Buoy('Score', score),
                 ],
               ),
             ],
@@ -423,10 +443,10 @@ class InfoBuoys extends StatelessWidget {
           return Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Buoy('HR', 69),
-              Buoy('HR', 69),
-              Buoy('HR', 69),
-              Buoy('HR', 69)
+              Buoy('HR', heartRate),
+              Buoy('HRV', hRV),
+              Buoy('Time', time),
+              Buoy('Score', score)
             ],
           );
         }
