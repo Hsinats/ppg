@@ -51,7 +51,8 @@ List<int> heartRate(List<SensorValue> data) {
     for (int i = 1; i < beatTimes.length; i++) {
       variabilityTally += pow(beatTimes[i] - beatTimes[i - 1], 2);
     }
-    ret.add((variabilityTally) ~/ 1);
+    double hrv = sqrt(variabilityTally / counter);
+    ret.add(hrv ~/ 1);
   } else {
     ret.add(0);
   }
