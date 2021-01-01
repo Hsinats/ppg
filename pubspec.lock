@@ -473,6 +473,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.3"
+  scidart:
+    dependency: "direct main"
+    description:
+      name: scidart
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.1-dev.9"
   scratch_space:
     dependency: transitive
     description:

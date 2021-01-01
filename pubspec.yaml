@@ -1,5 +1,5 @@
-name: PPG
-description: Measure PPG using the phone's camera.
+name: MediRate
+description: Meditate based off your heart rate
 
 version: 1.0.1+2
 
@@ -21,6 +21,7 @@ dependencies:
   #     ref: flash_light
   fl_chart: ^0.11.1
   smart_signal_processing: ^2.1.1
+  scidart: ^0.0.1-dev.9
 
 dev_dependencies:
   flutter_test:

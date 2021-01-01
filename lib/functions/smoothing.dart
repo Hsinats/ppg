@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:PPG/models/models.dart';
+import 'package:MediRate/models/models.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:smart_signal_processing/smart_signal_processing.dart';
 

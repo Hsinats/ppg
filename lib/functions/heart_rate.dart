@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:PPG/models/models.dart';
+import 'package:MediRate/models/models.dart';
 import 'dart:math' as math;
 
 List<int> heartRate(List<SensorValue> data) {

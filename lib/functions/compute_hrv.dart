@@ -1,25 +1,21 @@
-// import 'dart:typed_data';
+import 'package:MediRate/models/models.dart';
+import 'package:scidart/scidart.dart';
+import 'package:scidart/numdart.dart';
 
-// import 'package:PPG/models/models.dart';
-// import 'package:smart_signal_processing/smart_signal_processing.dart';
+void doTheStuff(List<SensorValue> signal) {
+  Array signal1D = Array.fixed(signal.length);
 
-// computeHRV(List<SensorValue> array) {
-//   if (array.length < 4) return;
+  for (int i = 0; i < signal.length; i++) {
+    signal1D[i] = signal[i].value;
+  }
+  // signal.forEach((point) {
+  //   signal1D.add(point.value);
+  // });
 
-//   int dataLength = getArrayRoot2Length(array);
+  int timeDelta = signal.last.time.difference(signal.first.time).inMilliseconds;
 
-//   // Data
-//   Float64List real = Float64List(dataLength);
-//   Float64List imaginary = Float64List(dataLength);
+  rfft(signal1D);
 
-//   for i = 1;
-// }
-
-// int getArrayRoot2Length(List array) {
-//   int i = 1;
-//   if (array.length == 1) return 1;
-//   while (array.length / i >= 1 && i != 512) {
-//     i *= 2;
-//   }
-//   return i ~/ 2;
-// }
+  print(signal.length);
+  print('time: $timeDelta');
+}

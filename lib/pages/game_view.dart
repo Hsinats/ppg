@@ -1,15 +1,18 @@
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:PPG/functions/functions.dart';
+import 'package:MediRate/models/models.dart';
+import 'package:MediRate/functions/functions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_better_camera/camera.dart';
 import 'package:wakelock/wakelock.dart';
 
-import 'package:PPG/models/models.dart';
+const waveColor = Colors.blue;
 
 class GameView extends StatefulWidget {
   @override
@@ -21,6 +24,7 @@ class _GameViewState extends State<GameView> {
   int _fps = 30;
   CameraImage _lastCameraImage;
   List<SensorValue> _redValues = [];
+  List<SensorValue> _redDiff = [];
   int frameTally = 0;
 
   List<Float64List> data = [];
@@ -42,7 +46,7 @@ class _GameViewState extends State<GameView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _ScaffoldBodyLandscape(_redValues, gameInfo),
+      body: _ScaffoldBodyLandscape(_redDiff, gameInfo),
       floatingActionButton: FloatingActionButton(
           child: Icon(gameOn ? Icons.pause : Icons.play_arrow),
           onPressed: gameOn ? _stopGame : _play),
@@ -72,10 +76,13 @@ class _GameViewState extends State<GameView> {
         if (_lastCameraImage != null) {
           _scanImage(_lastCameraImage);
           frameTally++;
-          if (frameTally >= _fps) {
+          if (frameTally >= _fps * 5) {
             frameTally = 0;
             // heartRate(_redValues);
-            List<int> hrReturn = heartRate(_redValues);
+            List<int> hrReturn = heartRate(_redDiff);
+            Isolate.spawn(doTheStuff, _redDiff);
+            print('print in main thread');
+            // doTheStuff(_redDiff);
             gameInfo.update(newHeartRate: hrReturn[0], newHRV: hrReturn[1]);
             setState(() {});
           }
@@ -112,6 +119,13 @@ class _GameViewState extends State<GameView> {
     double redAvg = _planeAverage(image, 'red');
 
     _redValues.add(SensorValue(currentTime, redAvg));
+
+    int _redLength = _redValues.length;
+
+    if (_redLength >= 2) {
+      _redDiff.add(SensorValue(currentTime,
+          _redValues[_redLength - 1].value - _redValues[_redLength - 2].value));
+    }
     setState(() {});
   }
 
@@ -159,23 +173,33 @@ class Sky extends StatelessWidget {
     Key key,
   }) : super(key: key);
 
+  final double sunSize = 120;
+
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
       Container(
-        decoration: BoxDecoration(color: Colors.pink[200]),
+        // decoration: BoxDecoration(
+        //     gradient: LinearGradient(
+        //         begin: Alignment.bottomCenter,
+        //         end: Alignment.topCenter,
+        //         colors: [
+        //       Colors.orange[50],
+        //       Colors.orange[200],
+        //     ])),
+        decoration: BoxDecoration(color: Colors.orange[200]),
       ),
       Positioned(
           top: 30,
           right: 20,
           child: Container(
-            height: 80,
-            width: 80,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(40),
-              color: Colors.yellow[200],
-            ),
-          ))
+              height: sunSize,
+              width: sunSize,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(sunSize / 2),
+                color: Colors.orange[200],
+                // gradient: RadialGradient(colors: [Colors.red, Colors.orange])),
+              )))
     ]);
   }
 }
@@ -234,7 +258,7 @@ class WavesPainter extends CustomPainter {
     // paint waves
 
     var wavePaint = Paint()
-      ..color = Colors.blue
+      ..color = waveColor
       ..style = PaintingStyle.fill
       ..strokeWidth = 2;
 
@@ -302,7 +326,14 @@ class Water extends StatelessWidget {
         width: width,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.blue,
+            color: waveColor,
+            // gradient: LinearGradient(
+            //     begin: Alignment.bottomCenter,
+            //     end: Alignment.topCenter,
+            //     colors: [
+            //       waveColor[800],
+            //       waveColor,
+            //     ]),
           ),
           child: InfoBuoys(
             heartRate: gameInfo.heartRate,

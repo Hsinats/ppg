@@ -29,10 +29,3 @@ class Chart extends StatelessWidget {
             renderSpec: new charts.NoneRenderSpec()));
   }
 }
-
-// class SensorValue {
-//   final DateTime time;
-//   final double value;
-
-//   SensorValue(this.time, this.value);
-// }
