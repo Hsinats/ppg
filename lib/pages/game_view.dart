@@ -1,15 +1,16 @@
 import 'dart:async';
-import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:MediRate/models/models.dart';
 import 'package:MediRate/functions/functions.dart';
+import 'package:MediRate/widgets/data_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_better_camera/camera.dart';
+import 'package:scidart/numdart.dart';
 import 'package:wakelock/wakelock.dart';
 
 const waveColor = Colors.blue;
@@ -26,6 +27,7 @@ class _GameViewState extends State<GameView> {
   List<SensorValue> _redValues = [];
   List<SensorValue> _redDiff = [];
   int frameTally = 0;
+  List<SensorValue> cleanedData = [];
 
   List<Float64List> data = [];
 
@@ -46,7 +48,15 @@ class _GameViewState extends State<GameView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _ScaffoldBodyLandscape(_redDiff, gameInfo),
+      body: Stack(children: [
+        _ScaffoldBodyLandscape(_redDiff, gameInfo),
+        cleanedData.length > 0
+            ? Align(
+                child: DataChart(cleanedData, 400),
+                alignment: Alignment.center,
+              )
+            : Container(),
+      ]),
       floatingActionButton: FloatingActionButton(
           child: Icon(gameOn ? Icons.pause : Icons.play_arrow),
           onPressed: gameOn ? _stopGame : _play),
@@ -71,7 +81,8 @@ class _GameViewState extends State<GameView> {
   }
 
   _initTimer() {
-    _timer = Timer.periodic(Duration(milliseconds: 1000 ~/ _fps), (timer) {
+    _timer =
+        Timer.periodic(Duration(milliseconds: 1000 ~/ _fps), (timer) async {
       if (gameOn) {
         if (_lastCameraImage != null) {
           _scanImage(_lastCameraImage);
@@ -80,8 +91,8 @@ class _GameViewState extends State<GameView> {
             frameTally = 0;
             // heartRate(_redValues);
             List<int> hrReturn = heartRate(_redDiff);
-            Isolate.spawn(doTheStuff, _redDiff);
-            print('print in main thread');
+            cleanedData = await compute(doTheStuff, _redValues);
+            // print('clean hr: ${heartRate(cleanedData)}');
             // doTheStuff(_redDiff);
             gameInfo.update(newHeartRate: hrReturn[0], newHRV: hrReturn[1]);
             setState(() {});
@@ -162,8 +173,25 @@ class _ScaffoldBodyLandscape extends StatelessWidget {
       children: [
         Sky(),
         data.isNotEmpty ? Waves(width, height, data) : Container(),
+        Island(),
         Water(height, width, gameInfo),
       ],
+    );
+  }
+}
+
+class Island extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: -0.4,
+      child: ClipOval(
+        child: Container(
+          height: 140,
+          width: 400,
+          decoration: BoxDecoration(color: Colors.brown),
+        ),
+      ),
     );
   }
 }
@@ -179,27 +207,30 @@ class Sky extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(children: [
       Container(
-        // decoration: BoxDecoration(
-        //     gradient: LinearGradient(
-        //         begin: Alignment.bottomCenter,
-        //         end: Alignment.topCenter,
-        //         colors: [
-        //       Colors.orange[50],
-        //       Colors.orange[200],
-        //     ])),
-        decoration: BoxDecoration(color: Colors.orange[200]),
+        decoration: BoxDecoration(
+            gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+              Colors.orange[50],
+              Colors.orange[400],
+            ])),
+        // decoration: BoxDecoration(color: Colors.orange[200]),
       ),
       Positioned(
           top: 30,
           right: 20,
           child: Container(
-              height: sunSize,
-              width: sunSize,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(sunSize / 2),
-                color: Colors.orange[200],
-                // gradient: RadialGradient(colors: [Colors.red, Colors.orange])),
-              )))
+            height: sunSize,
+            width: sunSize,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(sunSize / 2),
+              // color: Colors.orange[200],
+              gradient: RadialGradient(
+                  colors: [Colors.red, Colors.orange.withAlpha(150)],
+                  radius: 0.55),
+            ),
+          ))
     ]);
   }
 }
@@ -258,7 +289,7 @@ class WavesPainter extends CustomPainter {
     // paint waves
 
     var wavePaint = Paint()
-      ..color = waveColor
+      ..color = waveColor[200]
       ..style = PaintingStyle.fill
       ..strokeWidth = 2;
 
@@ -326,14 +357,11 @@ class Water extends StatelessWidget {
         width: width,
         child: Container(
           decoration: BoxDecoration(
-            color: waveColor,
-            // gradient: LinearGradient(
-            //     begin: Alignment.bottomCenter,
-            //     end: Alignment.topCenter,
-            //     colors: [
-            //       waveColor[800],
-            //       waveColor,
-            //     ]),
+            // color: waveColor,
+            gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [waveColor[900], waveColor[200]]),
           ),
           child: InfoBuoys(
             heartRate: gameInfo.heartRate,

@@ -31,14 +31,14 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _animationController =
-        AnimationController(duration: Duration(milliseconds: 500));
-    _animationController
-      ..addListener(() {
-        setState(() {
-          _iconScale = 1.0 + _animationController.value * 0.4;
-        });
-      });
+    // _animationController =
+    //     AnimationController(duration: Duration(milliseconds: 500));
+    // _animationController
+    //   ..addListener(() {
+    //     setState(() {
+    //       _iconScale = 1.0 + _animationController.value * 0.4;
+    //     });
+    //   });
   }
 
   @override

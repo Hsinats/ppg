@@ -24,7 +24,7 @@ class DataChart extends StatelessWidget {
     }
 
     return Container(
-      height: 20,
+      height: 100,
       width: width,
       child: LineChart(LineChartData(
           titlesData: FlTitlesData(
