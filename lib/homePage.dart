@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_better_camera/camera.dart';
 import 'package:wakelock/wakelock.dart';
-import 'chart.dart';
 import 'models/models.dart';
 
 class HomePage extends StatefulWidget {
@@ -31,14 +30,6 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    // _animationController =
-    //     AnimationController(duration: Duration(milliseconds: 500));
-    // _animationController
-    //   ..addListener(() {
-    //     setState(() {
-    //       _iconScale = 1.0 + _animationController.value * 0.4;
-    //     });
-    //   });
   }
 
   @override
@@ -157,7 +148,6 @@ class HomePageView extends State<HomePage> with SingleTickerProviderStateMixin {
                       Radius.circular(18),
                     ),
                     color: Colors.black),
-                child: Chart(_data),
               ),
             ),
           ],

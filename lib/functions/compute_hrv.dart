@@ -1,47 +1,52 @@
+import 'dart:math';
+
 import 'package:MediRate/models/models.dart';
 import 'package:scidart/scidart.dart';
 import 'package:scidart/numdart.dart';
 
 List<SensorValue> doTheStuff(List<SensorValue> signal) {
   DateTime now = DateTime.now();
-  Array signal1D = Array.fixed(signal.length);
+  Array signal1D = Array.fixed(min(signal.length, 900));
 
-  for (int i = 0; i < signal.length; i++) {
-    signal1D[i] = signal[i].value;
+  int indexToStartAt = max(0, signal.length - 900);
+
+  for (int i = indexToStartAt; i < signal.length; i++) {
+    signal1D[i - indexToStartAt] = signal[i].value;
   }
 
   ArrayComplex transformedSignal = arrayToComplexArray(signal1D);
-  print('after made complex length: ${transformedSignal.length}');
+  // print('after made complex length: ${transformedSignal.length}');
 
   int timeDelta = signal.last.time.difference(signal.first.time).inSeconds;
   double secondWidth = signal.length / timeDelta;
 
   transformedSignal = fft(transformedSignal);
-  print('after first transform length: ${transformedSignal.length}');
+  // print('after first transform length: ${transformedSignal.length}');
 
   transformedSignal = butterworthFilter(transformedSignal, secondWidth * 2);
   transformedSignal =
       butterworthFilter(transformedSignal, secondWidth * 0.5, isLowPass: true);
 
-  print('after first filter length: ${transformedSignal.length}');
+  // print('after first filter length: ${transformedSignal.length}');
 
   transformedSignal = ifft(transformedSignal);
-  Array outputSignal = Array.fixed(transformedSignal.length);
+  Array outputSignal = Array.fixed(min(signal.length, 900));
   List<SensorValue> sensorOutput = [];
 
   for (int i = 0; i < transformedSignal.length; i++) {
     outputSignal[i] = transformedSignal[i].real;
   }
 
-  for (int i = 0; i < signal.length; i++) {
-    SensorValue sensorValue = SensorValue(signal[i].time, outputSignal[i]);
+  for (int i = indexToStartAt; i < signal.length; i++) {
+    SensorValue sensorValue =
+        SensorValue(signal[i].time, outputSignal[i - indexToStartAt]);
     sensorOutput.add(sensorValue);
   }
   print('signal length${signal.length}');
-  print('output signal length${outputSignal.length}');
-  print('time: $timeDelta');
+  // print('output signal length${outputSignal.length}');
+  // print('time: $timeDelta');
   Duration length = DateTime.now().difference(now);
-  // print('length: $length ');
+  print('length: $length ');
   return sensorOutput;
 }
 

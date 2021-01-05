@@ -7,17 +7,37 @@ List<int> heartRate(List<SensorValue> data) {
   List<int> ret = [];
   double max = 0;
   double min = 255;
-  // ignore: unused_local_variable
-  double average = 0;
+
   double threshold;
   double alpha = 0.3;
+
+  int window = 90;
+  double mean = 0;
+
+  for (int i = 0; i > window; i++) {
+    mean += data[i].value / window;
+  }
+
+  List<DateTime> beatTime = [];
+  for (int i = window; i < data.length; i++) {
+    bool checkBrokenThresh =
+        data[i - 1].value > mean && data[i - 1].value < mean;
+    if (checkBrokenThresh) {
+      beatTime.add(data[i].time);
+    }
+    mean += data[i].value / window;
+    mean -= data[i - window].value / window;
+  }
+
+  int heartRate =
+      beatTime.length ~/ beatTime.last.difference(beatTime.first).inMinutes;
 
   int trailing = 301;
   int dataStart = math.max(data.length - trailing, 0);
   int dataLength = data.length - dataStart;
 
   for (int i = dataStart; i < data.length; i++) {
-    average += data[i].value / dataLength;
+    // average += data[i].value / dataLength;
     if ((data[i].value ?? 0) > max) max = data[i].value;
     if ((data[i].value ?? 255) < max) min = data[i].value;
   }
@@ -33,9 +53,9 @@ List<int> heartRate(List<SensorValue> data) {
       if (previous != null) {
         counter++;
         bpm += 60 * 1000 / (data[i].time.millisecondsSinceEpoch - previous);
+        beatTimes.add(data[i].time.millisecondsSinceEpoch - previous);
       }
       previous = data[i].time.millisecondsSinceEpoch;
-      beatTimes.add(previous);
     }
   }
 
@@ -49,6 +69,7 @@ List<int> heartRate(List<SensorValue> data) {
   if (beatTimes.length > 1) {
     int variabilityTally = 0;
     for (int i = 1; i < beatTimes.length; i++) {
+      print(beatTimes[i] - beatTimes[i - 1]);
       variabilityTally += pow(beatTimes[i] - beatTimes[i - 1], 2);
     }
     double hrv = sqrt(variabilityTally / counter);

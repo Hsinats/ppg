@@ -89,11 +89,10 @@ class _GameViewState extends State<GameView> {
           frameTally++;
           if (frameTally >= _fps * 5) {
             frameTally = 0;
-            // heartRate(_redValues);
-            List<int> hrReturn = heartRate(_redDiff);
+            // List<int> hrReturn = heartRate(_redDiff);
             cleanedData = await compute(doTheStuff, _redValues);
-            // print('clean hr: ${heartRate(cleanedData)}');
-            // doTheStuff(_redDiff);
+            List<int> hrReturn = heartRate(cleanedData);
+
             gameInfo.update(newHeartRate: hrReturn[0], newHRV: hrReturn[1]);
             setState(() {});
           }
@@ -170,26 +169,72 @@ class _ScaffoldBodyLandscape extends StatelessWidget {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
     return Stack(
+      overflow: Overflow.clip,
       children: [
         Sky(),
         data.isNotEmpty ? Waves(width, height, data) : Container(),
-        Island(),
+        Island(height, width),
+        Tree(height, width),
         Water(height, width, gameInfo),
       ],
     );
   }
 }
 
-class Island extends StatelessWidget {
+class Tree extends StatelessWidget {
+  Tree(this.height, this.width);
+
+  final double height;
+  final double width;
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: -0.4,
+      bottom: height / 3 + height * .22,
+      right: 0,
+      child: Stack(
+        overflow: Overflow.visible,
+        children: [
+          Positioned(
+            left: 20,
+            child: Container(
+              height: height * .3,
+              width: height * .05,
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      colors: [Colors.brown, Colors.brown[200]])),
+            ),
+          ),
+          Positioned(
+            child: Container(
+              height: height * 0.15,
+              width: height * 0.15,
+              color: Colors.green,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class Island extends StatelessWidget {
+  Island(this.height, this.width);
+
+  final double height;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 0.8 * width,
+      bottom: height / 3 - height * .1,
       child: ClipOval(
         child: Container(
-          height: 140,
-          width: 400,
-          decoration: BoxDecoration(color: Colors.brown),
+          height: height * .2,
+          width: 0.25 * width,
+          decoration: BoxDecoration(
+              gradient:
+                  LinearGradient(colors: [Colors.orange, Colors.orange[200]])),
         ),
       ),
     );
@@ -219,7 +264,7 @@ class Sky extends StatelessWidget {
       ),
       Positioned(
           top: 30,
-          right: 20,
+          left: 20,
           child: Container(
             height: sunSize,
             width: sunSize,
@@ -357,7 +402,6 @@ class Water extends StatelessWidget {
         width: width,
         child: Container(
           decoration: BoxDecoration(
-            // color: waveColor,
             gradient: LinearGradient(
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,

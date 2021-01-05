@@ -11,10 +11,11 @@ class DataChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(redData.length);
     List<FlSpot> red = [];
 
     redData.forEach((element) {});
-    for (int i = max(0, redData.length - 100); i < redData.length; i++) {
+    for (int i = max(0, redData.length - 900); i < redData.length; i++) {
       SensorValue element = redData[i];
       red.add(FlSpot(
           (element.time.millisecondsSinceEpoch -
@@ -29,7 +30,7 @@ class DataChart extends StatelessWidget {
       child: LineChart(LineChartData(
           titlesData: FlTitlesData(
               leftTitles: SideTitles(showTitles: false),
-              bottomTitles: SideTitles(showTitles: false)),
+              bottomTitles: SideTitles(showTitles: true)),
           lineBarsData: [
             LineChartBarData(spots: red, dotData: FlDotData(show: false))
           ])),
